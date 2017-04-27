@@ -88,13 +88,12 @@
         var features = [];
         this.forEachFeatureAtPixel(evt.pixel, function(feature) {
             features = features.concat(feature.get('features'));
-        });
         showFeaturesPopup(features);
     });
 
     me.popupWrapper = document.getElementById('PopupWrapper');
     me.popupWrapper.addEventListener('click', function(e) {
-        if(e.target.className === 'mask') {
+        if(['mask', 'close-button'].indexOf(e.target.className) !== -1) {
             setPopupVisibility(false);
         }
     });
@@ -107,12 +106,14 @@
         };
         features.forEach(function(f) {
             var data = f.data;
-            itemsHtml += '<a href=' + data.url + ' target="blank">' +
-                data.subject +
+            itemsHtml += '<a href=' + data.url + ' target="blank" class="list-item">' +
+                    '<img src=' + 'http://l-files.livejournal.net/og_image/10761149/9175?v=1493290254' + ' />' +
+                    '<b>' + data.subject + '</b>' +
             '</a>';
         });
 
         content.innerHTML = itemsHtml;
+        content.scrollTop = 0;
         setPopupVisibility(true);
     }
     function setPopupVisibility(isVisible) {
