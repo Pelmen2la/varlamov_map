@@ -3,20 +3,17 @@ var liveJournal = require('livejournal'),
     request = require('request'),
     geocoder = require('geocoder'),
     fs = require('fs'),
+    path = require('path'),
+    dateFormat = require('dateformat'),
     fastCsv = require('fast-csv'),
+    webshot = require('webshot'),
+    jimp = require('jimp'),
     Post = mongoose.model('post'),
     Country = mongoose.model('country'),
     City = mongoose.model('city');
 
-function getPostsFromLivejournal(beforedate) {
-    liveJournal.xmlrpc.getevents({
-        journal: 'zyalt',
-        auth_method: 'noauth',
-        selecttype: 'lastn',
-        howmany: 50,
-        beforedate: beforedate
-    }, function(err, val) {
-        var posts = val ? val['events'] : [];
+function copyPostsFromLivejournal(limit, beforedate) {
+    getPostsFromLivejournal(beforedate, function(posts) {
         posts.forEach(function(post) {
             Post.findOne({itemid: post.itemid}, function(err, data) {
                 if(data) {
@@ -45,10 +42,46 @@ function getPostsFromLivejournal(beforedate) {
             });
         });
         if(posts.length) {
-            getPostsFromLivejournal(posts[posts.length - 1].eventtime);
+            Post.count({}, function(err, count) {
+                if(limit > count) {
+                    copyPostsFromLivejournal(count, posts[posts.length - 1].eventtime);
+                }
+            });
+        }
+    });
+};
+
+function refreshPostProps(beforedate) {
+    getPostsFromLivejournal(beforedate, function(posts) {
+        posts.forEach(function(p) {
+            Post.findOne({ itemid: p.itemid }, function(err, post) {
+                if(post) {
+                    ['anum', 'can_comment', 'ditemid', 'eventtime', 'event_timestamp', 'itemid', 'logtime',
+                            'reply_count', 'subject', 'url', 'cityName', 'countryName', 'props'].forEach(function(propName) {
+                        post.set(propName, p[propName]);
+                    });
+                    post.save();
+                }
+            });
+        });
+        if(posts.length) {
+            refreshPostProps(posts[posts.length - 1].eventtime);
         } else {
             return;
         }
+    });
+};
+
+function getPostsFromLivejournal(beforedate, callback) {
+    beforedate = beforedate || dateFormat(new Date(), 'yyyy-mm-dd HH:MM:ss');
+    liveJournal.xmlrpc.getevents({
+        journal: 'zyalt',
+        auth_method: 'noauth',
+        selecttype: 'lastn',
+        howmany: 50,
+        beforedate: beforedate
+    }, function(err, val) {
+        callback(!err && val ? val['events'] : []);
     });
 };
 
@@ -138,9 +171,33 @@ function getAddressLocation(address, callback) {
     );
 };
 
+function createPostsPreviewImages(offset) {
+    Post.find({}, null, {limit: 10, skip: offset}, function(err, posts) {
+        posts.forEach(createPostPreviewImage);
+    });
+};
+
+function createPostPreviewImage(post) {
+    var dirPath = path.join(global.appRoot, '/static/images/posts_preview/'),
+        imageName = post.get('itemid') + '.jpg',
+        imagePath = path.join(dirPath, imageName),
+        smallImagePath = path.join(dirPath, 'small', imageName);
+
+    if(!fs.existsSync(smallImagePath)) {
+        webshot(post.get('url'), imagePath, {streamType: 'jpg', shotOffset: {top: 450}}, function() {
+            jimp.read(imagePath, function(err, image) {
+                image.resize(256, 192).quality(60).write(smallImagePath);
+            });
+        });
+    }
+};
+
 
 module.exports = {
-    getPostsFromLivejournal: getPostsFromLivejournal,
+    copyPostsFromLivejournal: copyPostsFromLivejournal,
+    refreshPostProps: refreshPostProps,
     setPostsLocation: setPostsLocation,
+    createPostsPreviewImages: createPostsPreviewImages,
+    createPostPreviewImage: createPostPreviewImage,
     generateCountriesAndCitiesFromCsv: generateCountriesAndCitiesFromCsv
 };

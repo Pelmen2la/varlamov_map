@@ -24,9 +24,35 @@
         imageHeight = 140,
         imageWidth = 159,
 
+        getFatureTextCore = function(feature) {
+            return feature.data.cityName || feature.data.countryName;
+        },
+
+        getFeatureText = function(feature) {
+            var features = feature.get('features');
+            if(features.length === 1) {
+                return getFatureTextCore(features[0]);
+            } else {
+                var namesCache = {},
+                    namesArr = [];
+                features.forEach(function(f) {
+                    var name = getFatureTextCore(f),
+                        cache = namesArr.find(function(r) {
+                            return r.name === name;
+                        });
+                    if(cache) {
+                        cache.value++;
+                    } else {
+                        namesArr.push({name: name, value: 1});
+                    }
+                });
+                return namesArr.map(function(r) {
+                    return r.name + ' (' + r.value + ')';
+                }).join(', ');
+            }
+        };
+
         getFeatureStyle = function(feature, isActive) {
-            var features = feature.get('features'),
-                fistFeatureData = features[0].data;
             return new ol.style.Style({
                 image: new ol.style.Icon({
                     src: '/static/images/icons/logo.png',
@@ -34,7 +60,7 @@
                     opacity: isActive ? 1 : 0.7
                 }),
                 text: new ol.style.Text({
-                    text: features.length === 1 ? (fistFeatureData.cityName || fistFeatureData.countryName) : features.length.toString(),
+                    text: getFeatureText(feature),
                     offsetY: imageHeight / 4 + 20,
                     scale: 3,
                     fill: 'white'
@@ -88,7 +114,8 @@
         var features = [];
         this.forEachFeatureAtPixel(evt.pixel, function(feature) {
             features = features.concat(feature.get('features'));
-        showFeaturesPopup(features);
+            showFeaturesPopup(features);
+        });
     });
 
     me.popupWrapper = document.getElementById('PopupWrapper');
@@ -107,8 +134,13 @@
         features.forEach(function(f) {
             var data = f.data;
             itemsHtml += '<a href=' + data.url + ' target="blank" class="list-item">' +
-                    '<img src=' + 'http://l-files.livejournal.net/og_image/10761149/9175?v=1493290254' + ' />' +
-                    '<b>' + data.subject + '</b>' +
+                ('<img src="/static/images/posts_preview/small/' + data.id + '.jpg" class="main-image" />') +
+                '<p>' + data.subject + '</p>' +
+                '<div class="icons-container">' +
+                    '<img src="/static/images/icons/country.png" />' + data.countryName +
+                    (data.cityName ? '<img src="/static/images/icons/city.png" />' + data.cityName : '') +
+                    '<img src="/static/images/icons/calendar.png" />' + data.dateString +
+                '</div>' +
             '</a>';
         });
 

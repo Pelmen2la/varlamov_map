@@ -13,10 +13,19 @@ var mongoose = require('mongoose'),
 module.exports = function(app) {
     app.get('/', function(req, res) {
         fs.readFile(path.join(global.appRoot, '/static/index.html'), 'utf8', function(err, indexPageHtml) {
-            Post.find({ 'location.lat': { $exists: true } }, ['url', 'location', 'eventtime', 'subject', 'cityName', 'countryName', 'props'], {}, function(err, data) {
+            Post.find({'location.lat': {$exists: true}}, function(err, data) {
                 data = data.map(function(post) {
-                    post.set('subject', post.get('subject').replace(/"/g, ''));
-                    return post.toObject();
+                    post = post.toObject();
+                    return {
+                        id: post.itemid,
+                        location: post.location,
+                        url: post.url,
+                        subject: post.subject.replace(/"/g, ''),
+                        cityName: post.cityName,
+                        countryName: post.countryName,
+                        imageUrl: post.props.og_image,
+                        dateString: post.eventtime.split(' ')[0]
+                    }
                 });
                 indexPageHtml = indexPageHtml.replace('{{postsData}}', JSON.stringify(data));
                 res.send(indexPageHtml);
@@ -48,16 +57,39 @@ module.exports = function(app) {
         });
     });
 
-    app.get('/generate_posts_from_livejournal/', function(req, res) {
-        var now = dateFormat(new Date(), 'yyyy-mm-dd HH:MM:ss');
-        dataHelper.getPostsFromLivejournal(now, function(err, data) {
-            res.json(data);
-        });
+    app.get('/copy_posts_from_livejournal/:limit', function(req, res) {
+        dataHelper.copyPostsFromLivejournal(parseInt(req.params.limit));
+        res.send('processing');
+    });
+
+    app.get('/refresh_posts_properties/', function(req, res) {
+        dataHelper.refreshPostProps();
+        res.send('processing');
     });
 
     app.get('/set_posts_location/', function(req, res) {
         dataHelper.setPostsLocation(function(err, data) {
-            res.send('done');
+            res.send('processing');
+        });
+    });
+
+    app.get('/create_posts_preview_images/:offset', function(req, res) {
+        dataHelper.createPostsPreviewImages(parseInt(req.params.offset));
+        res.send('processing');
+    });
+
+    app.get('/static/images/posts_preview/small/:id.jpg', function(req, res) {
+        var getImagePath = function(name) {
+                return '/static/images/posts_preview/small/' + name + '.jpg';
+            },
+            id = req.params.id,
+            imgPath = getImagePath(id),
+            isImageExists = fs.existsSync(imgPath);
+        res.writeHead(200, {'Content-Type': 'image/jpg'});
+        imgPath = isImageExists ? imgPath : getImagePath('default');
+        res.end(fs.readFileSync(path.join(global.appRoot, imgPath)), 'binary');
+        Post.findOne({ itemid: id }, function(err, post) {
+            !err && dataHelper.createPostPreviewImage(post);
         });
     });
 
