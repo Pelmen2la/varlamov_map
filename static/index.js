@@ -84,8 +84,8 @@
         layers: [raster, clusters],
         target: 'Map',
         view: new ol.View({
-            center: [53, 60],
-            zoom: 4
+            center: [0, 0],
+            zoom: 3
         })
     });
 
