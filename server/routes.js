@@ -24,6 +24,7 @@ module.exports = function(app) {
                         cityName: post.cityName,
                         countryName: post.countryName,
                         imageUrl: post.props.og_image,
+                        tags: post.props.taglist,
                         dateString: post.eventtime.split(' ')[0]
                     }
                 });
