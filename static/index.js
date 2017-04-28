@@ -122,6 +122,9 @@
     document.getElementById('FilterButtonsContainer').addEventListener('click', function(e) {
         var button = e.target,
             filterValue = button.innerHTML.toLowerCase();
+        if(button.tagName !== 'BUTTON') {
+            return;
+        }
         if(button.className.indexOf('active') !== -1) {
             button.className = button.className.replace('active', '');
             filters.splice(filters.indexOf(filterValue), 1);
