@@ -118,6 +118,28 @@
         });
     });
 
+    var filters = [];
+    document.getElementById('FilterButtonsContainer').addEventListener('click', function(e) {
+        var button = e.target,
+            filterValue = button.innerHTML.toLowerCase();
+        if(button.className.indexOf('active') !== -1) {
+            button.className = button.className.replace('active', '');
+            filters.splice(filters.indexOf(filterValue), 1);
+        } else {
+            button.className += 'active';
+            filters.push(filterValue);
+        }
+        source.clear();
+        source.addFeatures(features.filter(function(feature) {
+            for(var filter, i = 0; filter = filters[i]; i++) {
+                if(feature.data.tags.toLowerCase().indexOf(filter) > -1) {
+                    return true;
+                }
+            };
+            return !filters.length;
+        }));
+    });
+
     me.popupWrapper = document.getElementById('PopupWrapper');
     me.popupWrapper.addEventListener('click', function(e) {
         if(['mask', 'close-button'].indexOf(e.target.className) !== -1) {

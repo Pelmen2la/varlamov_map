@@ -68,7 +68,7 @@ module.exports = function(app) {
         res.send('processing');
     });
 
-    app.get('/set_posts_location/', function(req, res) {
+        app.get('/set_posts_location/', function(req, res) {
         dataHelper.setPostsLocation(function(err, data) {
             res.send('processing');
         });
@@ -91,12 +91,6 @@ module.exports = function(app) {
         res.end(fs.readFileSync(path.join(global.appRoot, imgPath)), 'binary');
         Post.findOne({ itemid: id }, function(err, post) {
             !err && dataHelper.createPostPreviewImage(post);
-        });
-    });
-
-    app.get('/get_posts/', function(req, res) {
-        Post.find({}, function(err, data) {
-            res.json(data);
         });
     });
 

@@ -150,3 +150,18 @@ body {
 .popup-wrapper .content-wrapper .content .list-item .icons-container img:not(:first-child) {
     margin-left: 1em;
 }
+
+.filters-button-container {
+    bottom: 0.5em;
+    left: 0.5em;
+}
+
+.filters-button-container  button {
+    width: initial;
+    padding: 0 0.2em;
+    cursor: pointer;
+}
+
+.filters-button-container  button.active {
+    background-color: rgba(0, 60, 136, 1)
+}
