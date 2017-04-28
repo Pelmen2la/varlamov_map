@@ -51,6 +51,12 @@ input, button {
 }
 /* /Reset CSS */
 
+html, body, .map {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+}
 
 body {
     font-size: 30px;
