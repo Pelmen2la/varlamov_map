@@ -44,7 +44,7 @@ function copyPostsFromLivejournal(limit, beforedate) {
         if(posts.length) {
             Post.count({}, function(err, count) {
                 if(limit > count) {
-                    copyPostsFromLivejournal(count, posts[posts.length - 1].eventtime);
+                    copyPostsFromLivejournal(limit, posts[posts.length - 1].eventtime);
                 }
             });
         }
